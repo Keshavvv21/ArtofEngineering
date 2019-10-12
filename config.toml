@@ -1,0 +1,9 @@
+[database]
+server = "mongodb://localhost"
+port = "27017"
+
+[DatabaseDetails]
+BuyersDBName  = "buyers"
+SellersDBName  = "sellers"
+ProjectDBName  = "projectDetails"
+CollectionName = "bider"
