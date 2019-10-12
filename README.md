@@ -9,8 +9,8 @@ OnLineBider for Projects
 
  Get Projects : http://localhost:1234/get-projects -> (Retrives projects available)
 
- Bid for a Project : http://localhost:1234/update-bid?ProjectID=<id> (Updates BID of a buyer for the project)
+ Bid for a Project : http://localhost:1234/update-bid?ProjectID=ID (Updates BID of a buyer for the project)
   
- Compute BID for Project : http://localhost:1234/compute-bid?ProjectID=<id> (Computes BID for the project)
+ Compute BID for Project : http://localhost:1234/compute-bid?ProjectID=ID (Computes BID for the project)
 
 
