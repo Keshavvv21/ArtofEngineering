@@ -1,4 +1,4 @@
-# ArtOfEngineering
+# Art Of Engineering In Algoanalytics
 
 ## 📚 Sessions
 
