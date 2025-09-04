@@ -1,16 +1,4 @@
-# IBackendApplication
-OnLineBider for Projects 
-# API's
- Create Project : http://localhost:1234/create-project ->  (Seller can create a project) 
+# ArtOfEngineering
 
- Create Buyer :  http://localhost:1234/create-buyer ->  (Create a buyer) 
-
- Create Seller : http://localhost:1234/create-seller -> (Create a Seller) 
-
- Get Projects : http://localhost:1234/get-projects -> (Retrives projects available)
-
- Bid for a Project : http://localhost:1234/update-bid?ProjectID=ID (Updates BID of a buyer for the project)
-  
- Compute BID for Project : http://localhost:1234/compute-bid?ProjectID=ID (Computes BID for the project)
-
+Session-1: Designing a Scalable Bidding System for YouTube AdSense
 
