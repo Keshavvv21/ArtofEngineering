@@ -1,160 +1,117 @@
-package project
+package project_test
 
 import (
 	"context"
-	"math"
-	"time"
+	"errors"
+
+	. "github.com/onsi/ginkgo" // Ginkgo for BDD test structure
+	. "github.com/onsi/gomega" // Gomega for expressive assertions
+
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/21keshav/IBackendApplication/config"
-	"github.com/21keshav/IBackendApplication/util"
-	"github.com/golang/glog"
+	. "github.com/21keshav/IBackendApplication/resources/project"
+	"github.com/21keshav/IBackendApplication/util/fakes"
 )
 
-type ProjectDetails struct {
-	ID        string         `json:"id,omitempty" bson:"id,omitempty"`
-	Details   []string       `json:"details,omitempty" bson:"details,omitempty"`
-	SellerID  string         `json:"seller_id,omitempty" bson:"seller_id,omitempty"`
-	BIDS      map[string]BID `json:"bids,omitempty" bson:"bids,omitempty"`
-	startDate time.Duration  `json:"start_date,omitempty" bson:"start_date,omitempty"`
-	endDate   time.Duration  `json:"end_date,omitempty" bson:"end_date,omitempty"`
-}
+var _ = Describe("ProjectManager", func() {
+	var (
+		pm              ProjectManager         // System under test
+		fakeMongoClient *fakes.FakeMongoClient // Fake Mongo client
+		dbConfig        config.DatabaseDetails // Config passed to ProjectManager
+	)
 
-type BID struct {
-	ID       string `json:"id,omitempty" bson:"id,omitempty"`
-	SellerID string `json:"seller_id,omitempty" bson:"seller_id,omitempty"`
-	BuyerID  string `json:"buyer_id,omitempty" bson:"buyer_id,omitempty"`
-	Amount   int    `json:"ammount,omitempty" bson:"ammount,omitempty"`
-}
+	// Runs before each test case
+	BeforeEach(func() {
+		dbConfig = config.DatabaseDetails{
+			BuyersDBName:   "buyers",
+			SellersDBName:  "sellers",
+			ProjectDBName:  "projects",
+			CollectionName: "collection",
+		}
+		ctx := context.TODO()
+		fakeMongoClient = &fakes.FakeMongoClient{}
+		pm = NewProjectManager(fakeMongoClient, ctx, dbConfig)
+	})
 
-type Seller struct {
-	ID         string `json:"id,omitempty" bson:"id,omitempty"`
-	SellerID   string `json:"seller_id,omitempty" bson:"seller_id,omitempty"`
-	SellerName string `json:"seller_name,omitempty" bson:"seller_name,omitempty"`
-}
+	// --- CreateProject ---
+	Describe("CreateProject", func() {
+		var projectDetails ProjectDetails
 
-type Buyer struct {
-	ID        string `json:"id,omitempty" bson:"id,omitempty"`
-	BuyerID   string `json:"buyer_id,omitempty" bson:"buyer_id,omitempty"`
-	BuyerName string `json:"buyer_name,omitempty" bson:"buyer_name,omitempty"`
-}
+		BeforeEach(func() {
+			projectDetails = ProjectDetails{ID: "p1", SellerID: "s1"}
+			// Simulate successful insert
+			fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, nil)
+		})
 
-type ProjectManager interface {
-	CreateProject(projectDetails ProjectDetails) error
-	GetProjects() ([]ProjectDetails, error)
-	UpdateProject(projectID string, bid BID) error
-	GetProject(projectID string) (ProjectDetails, error)
-	GetBuyer(buyerID string) (Buyer, error)
-	CreateBuyer(buyer Buyer) error
-	CreateSeller(seller Seller) error
-}
+		It("should create project successfully", func() {
+			err := pm.CreateProject(projectDetails)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fakeMongoClient.InsertDataCallCount()).To(Equal(1))
+		})
 
-type ProjectManagerImpl struct {
-	MongoClient util.MongoClient
-	ctx         context.Context
-	DBConfig    config.DatabaseDetails
-}
+		It("should return error when insert fails", func() {
+			fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, errors.New("insert failed"))
+			err := pm.CreateProject(projectDetails)
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-func NewProjectManager(mongoClient util.MongoClient, ctx context.Context, dbConfig config.DatabaseDetails) ProjectManager {
+	// --- CreateSeller ---
+	Describe("CreateSeller", func() {
+		var seller Seller
 
-	return &ProjectManagerImpl{
-		mongoClient,
-		ctx,
-		dbConfig,
-	}
-}
+		BeforeEach(func() {
+			seller = Seller{ID: "s1", SellerID: "seller1"}
+			fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, nil)
+		})
 
-func (um *ProjectManagerImpl) CreateSeller(seller Seller) error {
-	glog.Info("pm-create-seller")
-	defer glog.Info("pm-create-seller-completed")
-	_, err := um.MongoClient.InsertData(um.DBConfig.SellersDBName,
-		um.DBConfig.CollectionName, seller)
-	if err != nil {
-		glog.Error("mongo error inserting object", err)
-		return err
-	}
-	return nil
-}
+		It("should create seller successfully", func() {
+			err := pm.CreateSeller(seller)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fakeMongoClient.InsertDataCallCount()).To(Equal(1))
+		})
 
-func (um *ProjectManagerImpl) CreateBuyer(buyer Buyer) error {
-	glog.Info("pm-create-buyer")
-	defer glog.Info("pm-create-buyer-completed")
-	_, err := um.MongoClient.InsertData(um.DBConfig.BuyersDBName,
-		um.DBConfig.CollectionName, buyer)
-	if err != nil {
-		glog.Error("mongo error inserting object", err)
-		return err
-	}
-	return nil
-}
+		It("should return error when insert fails", func() {
+			fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, errors.New("insert failed"))
+			err := pm.CreateSeller(seller)
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-func (um *ProjectManagerImpl) CreateProject(projectDetails ProjectDetails) error {
-	glog.Info("pm-create-project")
-	defer glog.Info("pm-create-project-completed")
-	_, err := um.MongoClient.InsertData(um.DBConfig.ProjectDBName,
-		um.DBConfig.CollectionName, projectDetails)
-	if err != nil {
-		glog.Error("mongo error inserting object", err)
-		return err
-	}
-	return nil
-}
+	// --- CreateBuyer ---
+	Describe("CreateBuyer", func() {
+		var buyer Buyer
 
-func (um *ProjectManagerImpl) GetProjects() ([]ProjectDetails, error) {
-	glog.Info("pm-get-projects")
-	defer glog.Info("pm-get-projects-completed")
-	var projectDetails []ProjectDetails
-	err := um.MongoClient.FindAllObjects(um.DBConfig.ProjectDBName,
-		um.DBConfig.CollectionName, &projectDetails, math.MaxInt32)
-	if err != nil {
-		glog.Error("mongo error finding object", err)
-		return projectDetails, err
-	}
-	return projectDetails, nil
-}
+		BeforeEach(func() {
+			buyer = Buyer{ID: "b1", BuyerID: "buyer1"}
+			fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, nil)
+		})
 
-func (um *ProjectManagerImpl) GetBuyer(buyerID string) (Buyer, error) {
-	glog.Info("pm-get-buyer")
-	defer glog.Info("pm-get-buyer-completed")
-	var buyer Buyer
-	err := um.MongoClient.FindObject(um.DBConfig.BuyersDBName,
-		um.DBConfig.CollectionName, Buyer{ID: buyerID}, &buyer)
-	if err != nil {
-		glog.Error("mongo error finding object", err)
-		return buyer, err
-	}
-	return buyer, nil
-}
+		It("should create buyer successfully", func() {
+			err := pm.CreateBuyer(buyer)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fakeMongoClient.InsertDataCallCount()).To(Equal(1))
+		})
 
-func (um *ProjectManagerImpl) GetProject(projectID string) (ProjectDetails, error) {
-	glog.Info("pm-get-projects")
-	defer glog.Info("pm-get-projects-completed")
-	var projectDetails ProjectDetails
-	err := um.MongoClient.FindObject(um.DBConfig.ProjectDBName,
-		um.DBConfig.CollectionName, ProjectDetails{ID: projectID}, &projectDetails)
-	if err != nil {
-		glog.Error("mongo error finding object", err)
-		return projectDetails, err
-	}
-	return projectDetails, nil
-}
+		It("should return error when insert fails", func() {
+			fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, errors.New("insert failed"))
+			err := pm.CreateBuyer(buyer)
+			Expect(err).To(HaveOccurred())
+		})
+	})
 
-func (um *ProjectManagerImpl) UpdateProject(projectID string, bid BID) error {
-	glog.Info("pm-update-project")
-	defer glog.Info("pm-update-project-completed")
-	var projectDetails ProjectDetails
-	err := um.MongoClient.FindObject(um.DBConfig.ProjectDBName,
-		um.DBConfig.CollectionName, ProjectDetails{ID: projectID}, &projectDetails)
-	if err != nil {
-		glog.Error("mongo error finding object", err)
-		return err
-	}
+	// --- GetBuyer ---
+	Describe("GetBuyer", func() {
+		It("should return buyer when found", func() {
+			expectedBuyer := Buyer{ID: "b1", BuyerID: "buyer1"}
+			// Fake returns no error, fills buyer into result
+			fakeMongoClient.FindObjectStub = func(dbName, coll string, filter, result interface{}) error {
+				res := result.(*Buyer)
+				*res = expectedBuyer
+				return nil
+			}
 
-	projectDetails.BIDS[bid.ID] = bid
-	_, err = um.MongoClient.UpdateOne(um.DBConfig.ProjectDBName,
-		um.DBConfig.CollectionName, ProjectDetails{ID: projectID}, projectDetails)
-	if err != nil {
-		glog.Error("mongo error update object", err)
-		return err
-	}
-	return nil
-}
+			buyer, err := pm.GetBuyer("b1")
+			Expect(err).ToNot(HaveOccurred())
+			Exp

@@ -17,23 +17,47 @@ import (
 )
 
 func main() {
-	glog.Info("main")
-	glog.InfoDepth(1, "started")
-	defer glog.InfoDepth(1, "completed")
-	e := echo.New()
+	// ---- Application Startup Logs ----
+	glog.Info("Starting IBackendApplication...")
+	defer glog.Info("Application stopped.")
+
+	// ---- Load Configuration ----
 	var conf config.Config
 	if _, err := toml.DecodeFile("./config.toml", &conf); err != nil {
-		glog.Error("Error reading config file")
+		glog.Error("Failed to read config file: ", err)
+		// TODO: consider panic/exit if config is critical
 	}
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	mongoURL := fmt.Sprintf("%s:%s", conf.Database.Server, conf.Database.Port)
-	mongoClient := util.NewMongoClient(context.TODO(), mongoURL)
-	context, _ := context.WithTimeout(context.Background(), 60*time.Second)
-	projectManager := project.NewProjectManager(mongoClient, context, conf.DatabaseDetails)
-	bidManager := bidManager.NewBidManager(projectManager, context)
-	controller := controller.NewController(bidManager, projectManager)
-	controller.AttachHandlers(e)
 
-	e.Start(":1234")
+	// ---- Initialize Echo Web Framework ----
+	e := echo.New()
+	e.Use(middleware.Logger())   // Log all HTTP requests
+	e.Use(middleware.Recover())  // Recover from panics and return HTTP 500
+
+	// ---- Setup Database Connection (MongoDB) ----
+	mongoURL := fmt.Sprintf("%s:%s", conf.Database.Server, conf.Database.Port)
+	mongoClient := util.NewMongoClient(context.Background(), mongoURL)
+
+	// Create a context with timeout for DB operations
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	// ---- Initialize Resource Managers ----
+	// Project Manager handles project-related operations
+	projectManager := project.NewProjectManager(mongoClient, ctx, conf.DatabaseDetails)
+
+	// Bid Manager handles bidding logic, depends on ProjectManager
+	bidManager := bidManager.NewBidManager(projectManager, ctx)
+
+	// ---- Setup Controller & Route Handlers ----
+	// Controller wires HTTP routes to application logic
+	ctrl := controller.NewController(bidManager, projectManager)
+	ctrl.AttachHandlers(e)
+
+	// ---- Start HTTP Server ----
+	// TODO: replace with graceful shutdown (e.Shutdown) for production use
+	port := ":1234"
+	glog.Infof("Server listening on %s", port)
+	if err := e.Start(port); err != nil {
+		glog.Errorf("Error starting server: %v", err)
+	}
 }

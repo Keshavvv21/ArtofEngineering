@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo" // Ginkgo BDD testing framework
+	. "github.com/onsi/gomega" // Gomega matchers for assertions
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -16,13 +16,14 @@ import (
 
 var _ = Describe("Project", func() {
 	var (
-		pm              ProjectManager
-		fakeMongoClient *fakes.FakeMongoClient
-		dbConfig        config.DatabaseDetails
+		pm              ProjectManager        // The ProjectManager under test
+		fakeMongoClient *fakes.FakeMongoClient // Fake Mongo client used for mocking DB calls
+		dbConfig        config.DatabaseDetails // Database config injected into ProjectManager
 	)
+
+	// Runs before each test case
 	BeforeEach(func() {
 		dbConfig = config.DatabaseDetails{
-
 			BuyersDBName:   "buyers",
 			SellersDBName:  "sellers",
 			ProjectDBName:  "projectDetails",
@@ -33,48 +34,59 @@ var _ = Describe("Project", func() {
 		pm = NewProjectManager(fakeMongoClient, ctx, dbConfig)
 	})
 
+	// --- Tests for CreateProject ---
 	Describe("CreateProject", func() {
 		var (
-			mongoInsertResult *mongo.InsertOneResult
-			primitiveIDByte   primitive.ObjectID
-			projectDetails    ProjectDetails
+			mongoInsertResult *mongo.InsertOneResult // Simulated insert result
+			primitiveIDByte   primitive.ObjectID     // Fake MongoDB ObjectID
+			projectDetails    ProjectDetails         // Project details used as input
 		)
+
 		BeforeEach(func() {
+			// Fake MongoDB ObjectID generated from string "abc"
 			str := "abc"
 			for k, v := range []byte(str) {
 				primitiveIDByte[k] = byte(v)
 			}
+
+			// Setup mock InsertOneResult
 			mongoInsertResult = &mongo.InsertOneResult{
 				InsertedID: primitiveIDByte,
 			}
-			projectDetails = ProjectDetails{ID: "123", SellerID: "WWW"}
-			fakeMongoClient.InsertDataReturns(mongoInsertResult, nil)
 
+			// Initialize a project with dummy values
+			projectDetails = ProjectDetails{ID: "123", SellerID: "WWW"}
+
+			// Configure fake MongoClient to return success
+			fakeMongoClient.InsertDataReturns(mongoInsertResult, nil)
 		})
-		It("creates project sucessfull", func() {
+
+		It("creates project successfully", func() {
 			err := pm.CreateProject(projectDetails)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred()) // Expect no error
 		})
 
 		Context("Errors", func() {
 			BeforeEach(func() {
+				// Simulate Mongo insert failure
 				fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, errors.New("wodo"))
 			})
 
-			It("returns a error", func() {
+			It("returns an error", func() {
 				err := pm.CreateProject(projectDetails)
-				Expect(err).To(HaveOccurred())
+				Expect(err).To(HaveOccurred()) // Expect error
 			})
 		})
-
 	})
 
+	// --- Tests for CreateSeller ---
 	Describe("CreateSeller", func() {
 		var (
 			mongoInsertResult *mongo.InsertOneResult
 			primitiveIDByte   primitive.ObjectID
 			seller            Seller
 		)
+
 		BeforeEach(func() {
 			str := "abc"
 			for k, v := range []byte(str) {
@@ -84,33 +96,37 @@ var _ = Describe("Project", func() {
 				InsertedID: primitiveIDByte,
 			}
 			seller = Seller{ID: "123", SellerID: "WWW"}
-			fakeMongoClient.InsertDataReturns(mongoInsertResult, nil)
 
+			// Configure fake MongoClient to return success
+			fakeMongoClient.InsertDataReturns(mongoInsertResult, nil)
 		})
-		It("creates seller sucessfull", func() {
+
+		It("creates seller successfully", func() {
 			err := pm.CreateSeller(seller)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		Context("Errors", func() {
 			BeforeEach(func() {
+				// Simulate insert failure
 				fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, errors.New("wodo"))
 			})
 
-			It("returns a error", func() {
+			It("returns an error", func() {
 				err := pm.CreateSeller(seller)
 				Expect(err).To(HaveOccurred())
 			})
 		})
-
 	})
 
+	// --- Tests for CreateBuyer ---
 	Describe("CreateBuyer", func() {
 		var (
 			mongoInsertResult *mongo.InsertOneResult
 			primitiveIDByte   primitive.ObjectID
 			buyer             Buyer
 		)
+
 		BeforeEach(func() {
 			str := "abc"
 			for k, v := range []byte(str) {
@@ -120,24 +136,26 @@ var _ = Describe("Project", func() {
 				InsertedID: primitiveIDByte,
 			}
 			buyer = Buyer{ID: "123", BuyerID: "WWW"}
-			fakeMongoClient.InsertDataReturns(mongoInsertResult, nil)
 
+			// Configure fake MongoClient to return success
+			fakeMongoClient.InsertDataReturns(mongoInsertResult, nil)
 		})
-		It("creates seller sucessfull", func() {
+
+		It("creates buyer successfully", func() {
 			err := pm.CreateBuyer(buyer)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		Context("Errors", func() {
 			BeforeEach(func() {
+				// Simulate insert failure
 				fakeMongoClient.InsertDataReturns(&mongo.InsertOneResult{}, errors.New("wodo"))
 			})
 
-			It("returns a error", func() {
+			It("returns an error", func() {
 				err := pm.CreateBuyer(buyer)
 				Expect(err).To(HaveOccurred())
 			})
 		})
-
 	})
 })
