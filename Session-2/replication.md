@@ -1,5 +1,5 @@
 
-# Database Sharding & Replication
+# Database Sharding & Master Slave Replication
 
 ## 📌 Scale Achievement
 Instagram uses **sharding** to manage **billions of photos** across thousands of database nodes, enabling **sub-second query response times globally**.
