@@ -1,7 +1,4 @@
-Got it ✅
-Here’s a **README.md** with **diagrams** (ER-style for NoSQL types + architecture for sharding/replication). It explains **Non-Relational (NoSQL) Databases** with categories, examples, and benefits.
 
-````markdown
 # 🗄️ Non-Relational Databases (NoSQL)
 
 ---
