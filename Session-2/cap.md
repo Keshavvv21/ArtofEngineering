@@ -1,6 +1,4 @@
-Here’s a **structured `README.md` with diagrams** for the **CAP Theorem**, following the same style as your ACID one:
 
-````markdown
 # CAP Theorem in Distributed Systems
 
 The **CAP theorem**, formulated by **Eric Brewer** (2000) and formally proven by **Seth Gilbert & Nancy Lynch** (2002), states that in a **distributed system**, it is **impossible** to guarantee all three of the following at the same time:  
