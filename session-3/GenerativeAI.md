@@ -776,8 +776,6 @@ flowchart LR
 ---
 
 
-Perfect! I’ve added a new section at the bottom on **how to tune hyperparameters of Gemini models** for **3 cases**: text generation, object detection, and OCR. Here’s the updated README:
-
 ---
 
 ## 🛠️ Hyperparameter Tuning for Gemini Models
