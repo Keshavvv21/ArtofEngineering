@@ -131,7 +131,6 @@ flowchart TD
 4. **Decoding** – Converts tokens to human-readable text.
 5. **Output** – Final ChatGPT response.
 
-Perfect 👍 — let’s build a **README-style deep explanation** that walks through the **entire GPT (Transformer) pipeline**, step by step — from **user input** to **generated response** — with clear diagrams and code-style blocks.
 
 ---
 
